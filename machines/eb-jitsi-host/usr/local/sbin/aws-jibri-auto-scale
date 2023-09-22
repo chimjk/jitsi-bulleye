@@ -1,0 +1,99 @@
+#!/usr/bin/bash
+set -e
+
+# ------------------------------------------------------------------------------
+# AWS JIBRI AUTO SCALE
+# ------------------------------------------------------------------------------
+# Jibri external API port
+JIBRI_API_PORT=2222
+# Number of idle Jibri instances to keep available for upcoming requests.
+JIBRI_IDLE=2
+# Maximum number of Jibri instances.
+JIBRI_MAX=12
+# Launch template name for Jibri.
+JIBRI_LAUNCH_TEMPLATE=""
+
+SSH_CONFIG=/root/.ssh/jms-config
+STATS=/tmp/jicofo-jibri-stats.json
+
+# ------------------------------------------------------------------------------
+# add jibri instances
+# ------------------------------------------------------------------------------
+function add-jibri-instances {
+    needed=$1
+
+    [[ "$needed" -lt 1 ]] && return
+
+    aws ec2 run-instances --count "$needed" \
+        --launch-template "LaunchTemplateName=$JIBRI_LAUNCH_TEMPLATE" \
+        --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=jbr}]"
+}
+
+# ------------------------------------------------------------------------------
+# remove jibri instances
+#
+# shutdown idle jibri instances if there are more than needed.
+# ------------------------------------------------------------------------------
+function remove-jibri-instances {
+    allowed_idle=$1
+
+    idle=0
+    for ip in $(lxc-attach -qn eb-jitsi -- bash -c "netstat -tnp | \
+        grep 5222 | grep ESTABLISHED | grep -v '127.0.0.1' | \
+        awk '{print \$5}' | cut -d: -f1 | grep -v '172.22.22.' | sort -R")
+    do
+        # container
+        con=$(ssh -qF $SSH_CONFIG $ip -- \
+            lxc-ls --running --filter 'eb-jibri-\[0-9a-z\]+-1$' || true)
+        [[ -z "$con" ]] && continue
+
+        # is it idle?
+        state=$(ssh -qF $SSH_CONFIG $ip -- \
+            lxc-attach -qn $con -- \
+            curl -s http://127.0.0.1:$JIBRI_API_PORT/jibri/api/v1.0/health | \
+            jq -r .status.busyStatus || true)
+        [[ "$state" = "IDLE" ]] && (( idle += 1 )) || continue
+
+        # is its uptime greater than 600 sec?
+        uptime=$(ssh -qF $SSH_CONFIG $ip -- cut -d '.' -f1 /proc/uptime)
+        [[ "$uptime" -lt 600 ]] && continue
+
+        # shutdown it if it's not needed
+        if [[ "$idle" -gt "$allowed_idle" ]]; then
+            ssh -qF $SSH_CONFIG $ip -- poweroff || true
+        fi
+    done
+}
+
+# ------------------------------------------------------------------------------
+# main
+# ------------------------------------------------------------------------------
+# do nothing if the template is not set yet
+[[ -z "$JIBRI_LAUNCH_TEMPLATE" ]] && exit
+
+# get stats
+rm -f $STATS
+lxc-attach -qn eb-jitsi -- curl -s http://eb-jitsi:8888/stats >$STATS
+
+# get jibri stats
+jibri_count=$(jq .jibri_detector.count $STATS)
+jibri_available=$(jq .jibri_detector.available $STATS)
+(( jibri_needed = JIBRI_IDLE - jibri_available )) || true
+(( jibri_allowed = JIBRI_MAX - jibri_count )) || true
+
+# manage Jibri instances
+if [[ "$jibri_needed" -eq 0 ]]; then
+    :
+elif [[ "$jibri_needed" -lt 0 ]]; then
+    if [[ "$jibri_allowed" -gt "$JIBRI_IDLE" ]]; then
+        remove-jibri-instances $JIBRI_IDLE
+    else
+        remove-jibri-instances $jibri_allowed
+    fi
+elif [[ "$jibri_allowed" -gt 0 ]]; then
+    if [[ "$jibri_allowed" -gt "$jibri_needed" ]]; then
+        add-jibri-instances $jibri_needed
+    else
+        add-jibri-instances $jibri_allowed
+    fi
+fi

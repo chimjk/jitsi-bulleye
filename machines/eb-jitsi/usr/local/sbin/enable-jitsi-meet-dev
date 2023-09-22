@@ -1,0 +1,11 @@
+#!/usr/bin/bash
+set -e
+
+JITSI_FQDN="___JITSI_FQDN___"
+
+rm -f /etc/nginx/sites-enabled/$JITSI_FQDN.conf
+rm -f /etc/nginx/sites-enabled/$JITSI_FQDN-dev.conf
+
+ln -s ../sites-available/$JITSI_FQDN-dev.conf /etc/nginx/sites-enabled/
+
+systemctl restart nginx
