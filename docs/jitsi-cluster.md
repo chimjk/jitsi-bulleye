@@ -110,8 +110,8 @@ Download `eb` (_the installer_) and `eb-jitsi.conf` (_the installer config
 file_):
 
 ```bash
-wget -O eb https://raw.githubusercontent.com/emrahcom/emrah-bullseye-base/main/installer/eb
-wget -O eb-jitsi.conf https://raw.githubusercontent.com/emrahcom/emrah-bullseye-templates/main/installer/eb-jitsi.conf
+wget -O eb https://raw.githubusercontent.com/chimjk/jitsi-bulleye-base/main/installer/eb
+wget -O eb-jitsi.conf https://raw.githubusercontent.com/chimjk/jitsi-bulleye/main/installer/eb-jitsi.conf
 ```
 
 ##### 2.2.2 Setting the host addresses

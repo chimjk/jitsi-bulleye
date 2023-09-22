@@ -1,3 +1,6 @@
+# Note
+- Change meet UI: Fix line 125 file /installer-sub-scripts/eb-jitsi/311-jitsi-meet-dev.sh to your git respo
+
 # Table of contents
 
 - [About](#about)
@@ -25,8 +28,8 @@ Download the installer, run it with a template name as an argument and drink a
 coffee. That's it.
 
 ```bash
-wget https://raw.githubusercontent.com/emrahcom/emrah-bullseye-base/main/installer/eb
-wget https://raw.githubusercontent.com/emrahcom/emrah-bullseye-templates/main/installer/<TEMPLATE_NAME>.conf
+wget https://raw.githubusercontent.com/chimjk/jitsi-bulleye-base/main/installer/eb
+wget https://raw.githubusercontent.com/chimjk/jitsi-bulleye/main/installer/<TEMPLATE_NAME>.conf
 bash eb <TEMPLATE_NAME>
 ```
 
@@ -39,8 +42,8 @@ This template installs only a containerized `Debian 11 Bullseye`.
 #### To install eb-base
 
 ```bash
-wget https://raw.githubusercontent.com/emrahcom/emrah-bullseye-base/main/installer/eb
-wget https://raw.githubusercontent.com/emrahcom/emrah-bullseye-templates/main/installer/eb-base.conf
+wget https://raw.githubusercontent.com/chimjk/jitsi-bulleye-base/main/installer/eb
+wget https://raw.githubusercontent.com/chimjk/jitsi-bulleye/main/installer/eb-base.conf
 bash eb eb-base
 ```
 
@@ -69,8 +72,8 @@ This template installs a ready-to-use self-hosted `Jitsi`/`Jibri` service.
 Download the installer
 
 ```bash
-wget https://raw.githubusercontent.com/emrahcom/emrah-bullseye-base/main/installer/eb
-wget https://raw.githubusercontent.com/emrahcom/emrah-bullseye-templates/main/installer/eb-jitsi.conf
+wget https://raw.githubusercontent.com/chimjk/jitsi-bulleye-base/main/installer/eb
+wget https://raw.githubusercontent.com/chimjk/jitsi-bulleye/main/installer/eb-jitsi.conf
 ```
 
 Open `eb-jitsi.conf` file with an editor and edit `JITSI_FQDN` and `TURN_FQDN`.
